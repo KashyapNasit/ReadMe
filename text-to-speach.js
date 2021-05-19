@@ -1,12 +1,7 @@
-function extractContent(s) {
-	// console.log("Extracted called");
-	let span = document.createElement("span");
-	span.appendChild(s);
-	return span.textContent || span.innerText;
-}
+
 
 function processText(text) {
-	// console.log("Process called");
+	console.log(text);
 	let content = text.split("\n");
 	let final = [];
 	for (let i = 0; i < content.length; ++i) {
@@ -15,7 +10,7 @@ function processText(text) {
 			final.push(s);
 		}
 	}
-	return final.join(" ");
+	return final.join("<br>");
 }
 
 let content = "";
@@ -27,7 +22,7 @@ function load() {
 	this.book.loaded.spine
 		.then((spine) => {
 			spine.each((item) => {
-				
+
 				item.load(this.book.load.bind(this.book)).then((contents) => {
 					HTMLpages.push(contents);
 					const text = processText(extractContent(contents));
