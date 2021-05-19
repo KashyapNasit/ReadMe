@@ -4,7 +4,7 @@ const $prev = document.getElementById("prev");
 let currentSection;
 let currentSectionIndex = 0;
 
-let currentPlaying = 0;
+let currentPlaying = "p0";
 
 const synth = window.speechSynthesis;
 const pitch = document.querySelector("#pitch");
@@ -12,7 +12,7 @@ const pitchValue = document.querySelector(".pitch-value");
 const rate = document.querySelector("#rate");
 const rateValue = document.querySelector(".rate-value");
 
-const book = ePub("hp.epub");
+var book = ePub("hp.epub");
 
 function extractContent(s) {
 	let span = document.createElement("span");
@@ -20,17 +20,18 @@ function extractContent(s) {
 	return span.textContent || span.innerText;
 }
 
-function play() {
-	let element = document.getElementById(currentPlaying);
+function play(id) {
+	let element = document.getElementById(id);
 	const text = extractContent(element.cloneNode(true));
 	console.log(text);
 	speak(text);
 }
 
 function onTextClick(event) {
+	synth.cancel();
 	let id = event.target.id || event.target.parentNode.id;
 	currentPlaying = id;
-	play();
+	play(currentPlaying);
 }
 
 book.loaded.navigation.then(function (toc) {
@@ -103,6 +104,10 @@ function speak(data) {
 		console.error("speechSynthesis.speaking");
 		return;
 	}
+    if (synth.paused) {
+		console.error("speechSynthesis.paused");
+		return;
+	}
 	if (data !== "") {
 		// if (content !== "") {
 		var utterThis = new SpeechSynthesisUtterance(data);
@@ -113,27 +118,37 @@ function speak(data) {
 					event.error
 			);
 		};
-		utterThis.onend = function (event) {
-			console.log("SpeechSynthesisUtterance.onend");
-			playFrom(+_index + 1);
-		};
+	
 		utterThis.onerror = function (event) {
 			console.error("SpeechSynthesisUtterance.onerror");
 		};
 
-		utterThis.voice = "en-US";
+		// utterThis.voice = "en-US";
 		// voiceSelect.selectedOptions[0].getAttribute("data-name");
 		utterThis.pitch = pitch.value;
 		utterThis.rate = rate.value;
-        playSync();
-		async function playSync() {
-			synth.speak(utterThis);
-			return new Promise((resolve) => {
-				utterThis.onend = resolve;
-			});
-		}
-        currentPlaying++;
-        if(!synth.paused && !synth.speaking)
-            play();
+		utterThis.onend = () => {
+            console.log("SpeechSynthesisUtterance.onend");
+            let index = currentPlaying.replace("p","");
+            index = +index + 1;
+			currentPlaying = "p"+index;
+            console.log(currentPlaying);
+            if (!synth.paused && !synth.speaking){
+			    play(currentPlaying);
+            }
+		};
+		synth.speak(utterThis);
 	}
+}
+
+function toggleAudio(){
+    if (synth.speaking) {
+		synth.pause();
+	} else if (synth.paused){
+        synth.resume();
+    }
+}
+
+function stopAudio(){
+    synth.cancel();
 }
